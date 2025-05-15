@@ -1,0 +1,11 @@
+test.asm
+#notebook
+ntdll.dll
+/python
+*obj
+*exe
+*c
+*txt
+*img
+hash.asm
+winnt.h

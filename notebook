@@ -1,0 +1,56 @@
+# RANGO -  Remote Access Next-Gen Operator
+
+A modular, stealth-first remote access tool designed for ethical hacking and red team simulation. RANGO uses advanced evasion techniques like Halo’s Gate, in-memory shellcode execution, and module-based architecture.
+
+
+## Architecture
+
+*Dropper (rango.exe)* $TODO -
+   - Installs loader persistently using registry/scheduled task
+
+*Loader* -
+   - Contacts C2 over HTTPS / DoH
+   - Fetches encrypted shellcode
+   - Injects shellcode using WinAPI
+
+*Shellcode Engine* - /fuckingidea inject to windowsdefender
+   - Resolves syscall IDs using Halo’s Gate
+   - Unhooks `ntdll.dll` and patches ETW/AMSI 
+   - Uses encrypted channels to communicate
+   - Downloads and executes modules from C2 (in RAM)
+    ///randome port generate with algortithem in both client and server side like base on unix time
+        
+*Modules*
+   - Dynamic payloads fetched from C2
+   - All modules execute in-memory
+   - Defaults:
+        - Reverse shell
+        - Screen capture
+        - Webcam access
+        - Remote desktop
+
+
+## Development Roadmap
+
+    ;exe file - $TODO
+        install loader into disk/(todo advance stuff) using         windows API.
+
+    ;loader
+        fetch shellcode from C2 server and give control.
+
+    ;shellcode -
+        fetch syscall number using Halo’s Gate with hashed name.
+        shellcode copying byte itself into memory without PE header or os loader.
+        check Antivirus/EDR drivers are loaded and deley execution endless loop like hlt.
+        Uses DNS over HTTPS, encrypted callback channels, domain fronting to cominicate with c2 server.
+        blend with system trafics.
+        Obuffcating.
+        in specific command fetch modules from c2 server and run in same way shellcode dose
+
+    ;modules -
+        / revers_shell -
+            :$TODO i dont think yet how this internal machanisum work
+
+        This is no spesific roadmap we can make new module when we need and run infected device becouse modules are store in c2 server.
+
+
